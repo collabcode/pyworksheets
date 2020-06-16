@@ -16,7 +16,7 @@ class Paint(object):
 
         WIDTH = 454
         HEIGHT = 643
-
+        self.IMAGENUM = 0
         self.root = Tk()
         self.root.attributes('-fullscreen', True)
 
@@ -40,7 +40,7 @@ class Paint(object):
         self.save_button.grid(row=0, column=4)
 
         self.open_button = Button(
-            self.root, text='Open', command=self.open)
+            self.root, text='Open', command=self.openURL)
         self.open_button.grid(row=0, column=5)
 
         self.choose_size_button = Scale(
@@ -48,7 +48,7 @@ class Paint(object):
         self.choose_size_button.set(6)
         self.choose_size_button.grid(row=0, column=6)
 
-        self.open()
+        self.openURL()
 
     def setup(self):
         self.old_x = None
@@ -61,7 +61,11 @@ class Paint(object):
         self.c.bind('<B1-Motion>', self.paint)
         self.c.bind('<ButtonRelease-1>', self.reset)
         self.c.bind("<Button-1>", self.textstart)
+        self.c.bind('<Control-n>', self.callOpenURL) 
         self.c.bind("<Key>", self.keypress)
+ 
+    def callOpenURL(self,event):
+        self.openURL()
 
     def save(self):
         filename = saveAs(title="Save image as...", filetype=(
@@ -70,7 +74,7 @@ class Paint(object):
         img = Image.open(filename + '.eps')
         img.save(filename + '.png', "png")
 
-    def open(self):
+    def openURL(self):
 
         WIDTH = 454
         HEIGHT = 643
@@ -78,7 +82,9 @@ class Paint(object):
         url = pyperclip.paste()
         result = urlparse(url)
         if not(all([result.scheme, result.netloc, result.path])):
-            url = 'http://www.megaworkbook.com/images/content/Maths/CountAndWrite/Count_And_Write_10.png'
+            url = self.getURL()
+        print(url)
+        pyperclip.copy('')
 
         response = requests.get(url)
         img = Image.open(BytesIO(response.content))
@@ -91,10 +97,37 @@ class Paint(object):
         self.c.grid(row=1, columnspan=5)
 
         self.c.create_image(0, 0, anchor=NW, image=bgi)
-
+        self.c.focus_set()
         self.setup()
         self.root.mainloop()
+        if not (self.checkIfURLExists(url)):
+            f = open("urls.txt", "a")
+            f.write(url + '\n')
+            f.close()
 
+    def getURL(self):
+        with open('urls.txt') as f:
+            datafile = f.readlines()
+        i = 0
+        for line in datafile:
+            if (i == self.IMAGENUM):
+                self.IMAGENUM += 1
+                return line.rstrip("\n")
+            else:
+                i+=1
+        if(i==self.IMAGENUM):
+            self.IMAGENUM = 0
+            
+    def checkIfURLExists(self,strTxt):
+        with open('urls.txt') as f:
+            datafile = f.readlines()
+        found = False  # This isn't really necessary
+        for line in datafile:
+            if strTxt in line:
+                # found = True # Not necessary
+                return True
+        return False  
+        
     def use_pen(self):
         self.activate_button(self.pen_button)
 
